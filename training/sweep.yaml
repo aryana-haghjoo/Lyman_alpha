@@ -1,0 +1,20 @@
+program: training/train_bubble_size.py
+method: bayes
+metric:
+  name: val_rmse
+  goal: minimize
+parameters:
+  model.n_estimators:
+    values: [200, 400, 800, 1200]
+  model.max_depth:
+    values: [8, 12, 16, 24, null]
+  model.min_samples_leaf:
+    values: [1, 2, 4, 8]
+  data.val_fraction:
+    value: 0.2
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - --config
+  - training/config.yaml

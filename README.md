@@ -40,10 +40,23 @@ PYTHONPATH=src python3 scripts/run_bubble_stats_tools21cm_mfp.py \
   --output-dir results
 ```
 
+Train a bubble-size prediction model (80/20 train/val split + W&B-ready):
+
+```bash
+PYTHONPATH=src python3 training/build_dataset_tools21cm.py \
+  --data-dir data/for_aryana/late_end_early_start \
+  --output-csv training/data/bubble_size_dataset.csv \
+  --threshold 0.5 \
+  --iterations 200000
+
+python3 training/train_bubble_size.py --config training/config.yaml
+```
+
 ## Project Layout
 - `src/lyman_alpha/data.py`: binary loader + field extraction.
 - `scripts/scan_snapshots_fion_history.py`: redshift vs mean ionized fraction table.
 - `scripts/run_bubble_stats_tools21cm_mfp.py`: tools21cm MFP distribution for one snapshot.
+- `training/`: ML dataset builder, training script, `config.yaml`, and W&B sweep config.
 - `notebooks/lyman_alpha_starter.ipynb`: inline plots + tools21cm workflow.
 - `notebooks/lyman_alpha_animation.ipynb`: fion evolution movie generation (`mp4`/`gif`).
 
