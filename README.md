@@ -17,15 +17,8 @@ From the project email, the ionized fraction is `fion` at index `15`.
 Install dependencies in your `ly_a` environment:
 
 ```bash
-conda activate ly_a
 python -m pip install --upgrade pip
-python -m pip install numpy matplotlib jupyter tools21cm
-```
-
-If you prefer notebooks:
-
-```bash
-pip install jupyter matplotlib
+python -m pip install numpy matplotlib jupyter tools21cm imageio imageio-ffmpeg tqdm
 jupyter notebook notebooks/lyman_alpha_starter.ipynb
 ```
 
@@ -52,9 +45,10 @@ PYTHONPATH=src python3 scripts/run_bubble_stats_tools21cm_mfp.py \
 - `scripts/scan_snapshots_fion_history.py`: redshift vs mean ionized fraction table.
 - `scripts/run_bubble_stats_tools21cm_mfp.py`: tools21cm MFP distribution for one snapshot.
 - `notebooks/lyman_alpha_starter.ipynb`: inline plots + tools21cm workflow.
+- `notebooks/lyman_alpha_animation.ipynb`: fion evolution movie generation (`mp4`/`gif`).
 
 ## Recommended First Milestones
 1. Generate `ionization_history.csv` and identify representative stages (`x_HII ~ 0.2, 0.5, 0.8`).
 2. Compute MFP distance distributions at those stages.
-3. Validate stability vs `n_rays`, threshold choice, and random seed.
+3. Validate stability vs `iterations`, threshold choice, and seed.
 4. Convert each snapshot to ML-ready features (histogram bins + summary stats).
