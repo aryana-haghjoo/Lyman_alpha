@@ -1,0 +1,28 @@
+{
+  "target_column": "target_peak_radius_mpc_h",
+  "val_size": 336,
+  "y_true_mean": 21.907737731933594,
+  "y_true_std": 18.380741119384766,
+  "y_pred_mean": 21.78283004124554,
+  "y_pred_std": 17.75751034130291,
+  "metrics": {
+    "train_mae": 0.9323255876298036,
+    "train_rmse": 1.50345508333072,
+    "train_r2": 0.9928609997733067,
+    "val_mae": 3.1109867888272307,
+    "val_rmse": 4.457719249321056,
+    "val_r2": 0.9411834648511697,
+    "val_explained_variance": 0.9412296449540276,
+    "val_median_ae": 1.7724999999999973,
+    "val_max_ae": 16.13142857142857,
+    "val_bias_mean_error": -0.12490805399255857,
+    "val_mape_percent": 18.10005632775286,
+    "val_wape_percent": 14.200401590082182,
+    "val_pearson_r": 0.9701785060753155,
+    "val_fit_slope": 0.9372829797174718,
+    "val_fit_intercept": 1.249080000470799,
+    "n_train": 1312,
+    "n_val": 336,
+    "n_features": 45
+  }
+}

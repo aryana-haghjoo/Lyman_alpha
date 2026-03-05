@@ -19,6 +19,20 @@ PYTHONPATH=src python3 training/build_dataset_tools21cm.py \
   --iterations 200000
 ```
 
+For a much larger dataset, build patch-level samples (recommended):
+
+```bash
+cd /home/aryana/Documents/GitHub/Lyman_alpha
+PYTHONPATH=src python3 training/build_dataset_tools21cm_patches.py \
+  --data-dir data/for_aryana/late_end_early_start \
+  --output-csv training/data/bubble_size_dataset_patches.csv \
+  --patch-size 64 \
+  --patches-per-snapshot 16 \
+  --iterations 20000
+```
+
+This gives about `N_snapshots x patches_per_snapshot` rows (e.g., `103 x 16 = 1648` rows).
+
 ## 3) Train with 80/20 split
 
 `training/config.yaml` already uses `val_fraction: 0.2`.
@@ -26,6 +40,12 @@ PYTHONPATH=src python3 training/build_dataset_tools21cm.py \
 ```bash
 cd /home/aryana/Documents/GitHub/Lyman_alpha
 python3 training/train_bubble_size.py --config training/config.yaml
+```
+
+Patch dataset training config:
+
+```bash
+python3 training/train_bubble_size.py --config training/config_patches.yaml
 ```
 
 ## 4) Weights & Biases (W&B)
@@ -57,6 +77,9 @@ Key quantitative validation metrics include:
 - `val_bias_mean_error`
 - `val_mape_percent`, `val_wape_percent`
 - `val_pearson_r`, `val_fit_slope`, `val_fit_intercept`
+
+Split note:
+- Default config uses `split_mode: group` with `group_column: snapshot` to prevent leakage between train/validation.
 
 Create a sweep:
 

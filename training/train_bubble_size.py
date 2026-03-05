@@ -57,7 +57,7 @@ def main() -> None:
         median_absolute_error,
         r2_score,
     )
-    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import GroupShuffleSplit, train_test_split
 
     cfg = load_config(args.config)
 
@@ -84,13 +84,28 @@ def main() -> None:
     feat_cols = get_feature_columns(df, data_cfg["target_column"])
     X = df[feat_cols].to_numpy(dtype=np.float32)
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        X,
-        y,
-        test_size=float(data_cfg["val_fraction"]),
-        random_state=int(cfg["seed"]),
-        shuffle=True,
-    )
+    split_mode = str(data_cfg.get("split_mode", "random")).lower()
+    if split_mode == "group":
+        group_column = data_cfg.get("group_column", "snapshot")
+        if group_column not in df.columns:
+            raise SystemExit(f"group_column='{group_column}' not found in dataset columns.")
+        groups = df[group_column].to_numpy()
+        splitter = GroupShuffleSplit(
+            n_splits=1,
+            test_size=float(data_cfg["val_fraction"]),
+            random_state=int(cfg["seed"]),
+        )
+        train_idx, val_idx = next(splitter.split(X, y, groups=groups))
+        X_train, X_val = X[train_idx], X[val_idx]
+        y_train, y_val = y[train_idx], y[val_idx]
+    else:
+        X_train, X_val, y_train, y_val = train_test_split(
+            X,
+            y,
+            test_size=float(data_cfg["val_fraction"]),
+            random_state=int(cfg["seed"]),
+            shuffle=True,
+        )
 
     if model_cfg["type"] != "random_forest":
         raise SystemExit(f"Unsupported model type: {model_cfg['type']}")
