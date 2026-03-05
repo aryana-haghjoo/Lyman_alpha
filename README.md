@@ -14,12 +14,12 @@ Each snapshot is a binary float32 file with layout:
 From the project email, the ionized fraction is `fion` at index `15`.
 
 ## Quick Start
-Create and activate a virtual environment, then install dependencies:
+Install dependencies in your `ly_a` environment:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install numpy
+conda activate ly_a
+python -m pip install --upgrade pip
+python -m pip install numpy matplotlib jupyter tools21cm
 ```
 
 If you prefer notebooks:
@@ -32,26 +32,37 @@ jupyter notebook notebooks/lyman_alpha_starter.ipynb
 Run a first pass over snapshots to get mean ionized fraction history:
 
 ```bash
-PYTHONPATH=src python3 scripts/scan_snapshots.py \
+PYTHONPATH=src python3 scripts/scan_snapshots_fion_history.py \
   --data-dir data/for_aryana/late_end_early_start \
   --output results/ionization_history.csv
 ```
 
-Run the bubble-size (MFP) estimate on one snapshot:
+Run the custom bubble-size (MFP) estimate on one snapshot:
 
 ```bash
-PYTHONPATH=src python3 scripts/run_bubble_stats.py \
+PYTHONPATH=src python3 scripts/run_bubble_stats_custom_mfp.py \
   --snapshot data/for_aryana/late_end_early_start/gas_z=08.1176 \
   --n-rays 5000 \
   --threshold 0.5 \
   --output-dir results
 ```
 
+Run the tools21cm bubble-size (MFP) estimate on one snapshot:
+
+```bash
+PYTHONPATH=src python3 scripts/run_bubble_stats_tools21cm_mfp.py \
+  --snapshot data/for_aryana/late_end_early_start/gas_z=08.1176 \
+  --iterations 200000 \
+  --threshold 0.5 \
+  --output-dir results
+```
+
 ## Project Layout
 - `src/lyman_alpha/data.py`: binary loader + field extraction.
-- `src/lyman_alpha/bubble_stats.py`: MFP skewer-based bubble size calculation.
-- `scripts/scan_snapshots.py`: redshift vs mean ionized fraction table.
-- `scripts/run_bubble_stats.py`: compute and save bubble-size distribution for one snapshot.
+- `src/lyman_alpha/bubble_stats_custom_mfp.py`: custom MFP skewer-based bubble size calculation.
+- `scripts/scan_snapshots_fion_history.py`: redshift vs mean ionized fraction table.
+- `scripts/run_bubble_stats_custom_mfp.py`: custom MFP distribution for one snapshot.
+- `scripts/run_bubble_stats_tools21cm_mfp.py`: tools21cm MFP distribution for one snapshot.
 - `notebooks/lyman_alpha_starter.ipynb`: inline plots + exploratory workflow.
 
 ## Recommended First Milestones

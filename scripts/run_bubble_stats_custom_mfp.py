@@ -10,12 +10,12 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from lyman_alpha.bubble_stats import histogram, sample_mfp_distances  # noqa: E402
+from lyman_alpha.bubble_stats_custom_mfp import histogram, sample_mfp_distances  # noqa: E402
 from lyman_alpha.data import load_ionized_fraction, parse_redshift  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Run MFP bubble-size statistics on one snapshot.")
+    p = argparse.ArgumentParser(description="Run custom MFP bubble-size statistics on one snapshot.")
     p.add_argument("--snapshot", type=Path, required=True)
     p.add_argument("--output-dir", type=Path, default=Path("results"))
     p.add_argument("--threshold", type=float, default=0.5, help="Ionized if fion >= threshold.")
@@ -78,4 +78,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
