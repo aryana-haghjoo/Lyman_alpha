@@ -1,7 +1,0 @@
-snapshot=data/for_aryana/late_end_early_start/gas_z=08.1176
-redshift=8.1176
-threshold=0.5
-n_rays=200
-mean_distance_mpc_h=10.0800
-median_distance_mpc_h=6.0000
-p90_distance_mpc_h=23.5500

@@ -37,16 +37,6 @@ PYTHONPATH=src python3 scripts/scan_snapshots_fion_history.py \
   --output results/ionization_history.csv
 ```
 
-Run the custom bubble-size (MFP) estimate on one snapshot:
-
-```bash
-PYTHONPATH=src python3 scripts/run_bubble_stats_custom_mfp.py \
-  --snapshot data/for_aryana/late_end_early_start/gas_z=08.1176 \
-  --n-rays 5000 \
-  --threshold 0.5 \
-  --output-dir results
-```
-
 Run the tools21cm bubble-size (MFP) estimate on one snapshot:
 
 ```bash
@@ -59,11 +49,9 @@ PYTHONPATH=src python3 scripts/run_bubble_stats_tools21cm_mfp.py \
 
 ## Project Layout
 - `src/lyman_alpha/data.py`: binary loader + field extraction.
-- `src/lyman_alpha/bubble_stats_custom_mfp.py`: custom MFP skewer-based bubble size calculation.
 - `scripts/scan_snapshots_fion_history.py`: redshift vs mean ionized fraction table.
-- `scripts/run_bubble_stats_custom_mfp.py`: custom MFP distribution for one snapshot.
 - `scripts/run_bubble_stats_tools21cm_mfp.py`: tools21cm MFP distribution for one snapshot.
-- `notebooks/lyman_alpha_starter.ipynb`: inline plots + exploratory workflow.
+- `notebooks/lyman_alpha_starter.ipynb`: inline plots + tools21cm workflow.
 
 ## Recommended First Milestones
 1. Generate `ionization_history.csv` and identify representative stages (`x_HII ~ 0.2, 0.5, 0.8`).
