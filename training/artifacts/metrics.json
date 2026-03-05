@@ -1,0 +1,20 @@
+{
+  "train_mae": 1.521536585365853,
+  "train_rmse": 3.2009112955455685,
+  "train_r2": 0.9959233139299997,
+  "val_mae": 4.742761904761905,
+  "val_rmse": 7.837125772944594,
+  "val_r2": 0.9781378165079857,
+  "val_explained_variance": 0.9784900398978501,
+  "val_median_ae": 2.2600000000000016,
+  "val_max_ae": 26.388000000000005,
+  "val_bias_mean_error": 0.9947619047619043,
+  "val_mape_percent": 11.86868866146111,
+  "val_wape_percent": 10.472975814931653,
+  "val_pearson_r": 0.9908228887895048,
+  "val_fit_slope": 1.038128250699778,
+  "val_fit_intercept": -0.731903162642325,
+  "n_train": 82,
+  "n_val": 21,
+  "n_features": 40
+}

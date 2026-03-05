@@ -5,7 +5,7 @@ This directory trains a model to predict bubble size (`target_peak_radius_mpc_h`
 ## 1) Install training dependencies
 
 ```bash
-python -m pip install numpy pandas scikit-learn pyyaml joblib wandb tools21cm
+python -m pip install numpy pandas scikit-learn pyyaml joblib wandb tools21cm matplotlib
 ```
 
 ## 2) Build dataset from snapshots
@@ -41,6 +41,22 @@ Single run:
 ```bash
 python3 training/train_bubble_size.py --config training/config.yaml
 ```
+
+Training writes:
+- `training/artifacts/metrics.json`
+- `training/artifacts/validation_report.json`
+- `training/artifacts/val_predictions.csv`
+- `training/artifacts/val_pred_vs_true.png`
+- `training/artifacts/val_residual_hist.png`
+- `training/artifacts/val_residual_vs_true.png`
+
+Key quantitative validation metrics include:
+- `val_rmse`, `val_mae`, `val_r2`
+- `val_explained_variance`
+- `val_median_ae`, `val_max_ae`
+- `val_bias_mean_error`
+- `val_mape_percent`, `val_wape_percent`
+- `val_pearson_r`, `val_fit_slope`, `val_fit_intercept`
 
 Create a sweep:
 
