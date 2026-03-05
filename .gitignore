@@ -171,13 +171,10 @@ cython_debug/
 .pypirc
 # Ignore the data folder
 data/
-line_detect/
-sup_res/
+ly_a/
 .DS_Store
-toy_model/.DS_Store
-line_detect/line-finding/
 =======
-
+*.csv
 *.pkl
 *.npz
 wandb/
