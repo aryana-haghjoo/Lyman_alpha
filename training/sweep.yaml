@@ -17,4 +17,4 @@ command:
   - python3
   - ${program}
   - --config
-  - training/config.yaml
+  - training/config_patches.yaml

@@ -23,5 +23,4 @@ output:
 
 wandb:
   enabled: true
-  run_name: rf_patches_baseline
-
+  run_name: null
