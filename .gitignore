@@ -179,3 +179,7 @@ ly_a/
 *.npz
 wandb/
 >>>>>>> b1cce9d1101189b91c6329ca9c14872ce66cec8c
+
+# large artifacts
+*.joblib
+training/artifacts_patches/
