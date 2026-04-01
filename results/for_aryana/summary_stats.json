@@ -1,0 +1,36 @@
+{
+  "n_skewers": 10000,
+  "n_cells_per_skewer": 4000,
+  "n_wavelength_bins": 2000,
+  "angle_stats": {
+    "cos_theta_mean": -0.0058286008425056934,
+    "cos_theta_std": 0.5800429582595825,
+    "phi_mean": 3.159560441970825,
+    "phi_std": 1.81165611743927,
+    "theta_min": 0.0,
+    "theta_max": 3.1415927410125732,
+    "phi_min": 0.0,
+    "phi_max": 6.283180236816406
+  },
+  "density_stats": {
+    "mean_start": 1.3724559080797404e-27,
+    "mean_mid": 2.564283998538003e-28,
+    "mean_end": 2.5747658722603306e-28,
+    "global_min": 3.674361069348329e-29,
+    "global_max": 1.0632962464241523e-25
+  },
+  "velocity_stats": {
+    "mean_start": -15783009.0,
+    "mean_mid": -2034550.125,
+    "mean_end": -322310.03125,
+    "global_min": -90037528.0,
+    "global_max": 92033576.0
+  },
+  "transmission_stats": {
+    "mean_transmission_overall": 0.7104248404502869,
+    "mean_transmission_min": 2.212225354014663e-06,
+    "mean_transmission_max": 0.9968093633651733,
+    "wav_min": 1165.762451171875,
+    "wav_max": 1350.6700439453125
+  }
+}

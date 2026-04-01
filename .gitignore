@@ -184,3 +184,4 @@ wandb/
 # large artifacts
 *.joblib
 training/artifacts_patches/
+.codex
