@@ -14,7 +14,7 @@
 
 \maketitle
 
-The initial exploratory analysis of the 10,000 sightlines sampled at redshift $z=7.4985$ confirms the geometric and physical validity of the simulation outputs. As shown in Figure \ref{fig:angles}, the probability distributions of the sampling angles ($\cos(\theta)$ and $\phi$) display uniform profiles, verifying that the skewers isotropically sample the unit sphere around the underlying massive halos without directional bias. Moving outward along these sightlines, the 1D density and velocity distributions summarized in Figure \ref{fig:profiles} behave reliably. The individual plotted line-of-sight variations effectively capture stochastic localized structural deviations before smoothly converging toward expected asymptotic mean background values at large distances from the native halo boundaries.
+The initial exploratory analysis of the 10,000 sightlines sampled at redshift $z=7.4985$ confirms the geometric and physical validity of the simulation outputs. As shown in Figure \ref{fig:angles}, the probability distributions of the sampling angles ($\cos(\theta)$ and $\phi$) display uniform profiles, verifying that the skewers isotropically sample the unit sphere around the underlying massive halos without directional bias. Moving outward along these sightlines, the 1D density and velocity distributions summarized in Figure \ref{fig:profiles} behave reliably. Plotting the density on a logarithmic y-axis makes the contrast much easier to see: the individual skewers span multiple decades in density near the halo boundaries, while the mean profile still declines smoothly outward and the percentile band remains well behaved.
 
 Building upon these physical verifications, Figure \ref{fig:transmission} presents the extracted Lyman-$\alpha$ transmission curves. Most notably, the mean transmission spectrum cleanly illustrates a Gunn-Peterson trough collapsing entirely to zero at wavelengths $<1216$ \AA, accompanied by a prominent damping wing expanding redward. These signatures confirm the overall highly neutral state of the intergalactic medium expected at this redshift.
 
@@ -29,8 +29,8 @@ Building upon these physical verifications, Figure \ref{fig:transmission} presen
     \centering
     \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{density_profiles.png}
-        \caption{Density Profiles}
+        \includegraphics[width=\textwidth]{density_profiles_log.png}
+        \caption{Density Profiles (log y-axis)}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.49\textwidth}

@@ -96,6 +96,7 @@ def make_profile_plot(
     title: str,
     output_path: Path,
     rng: np.random.Generator,
+    yscale: str = "linear",
 ) -> dict[str, float]:
     sample_idx = rng.choice(values.shape[0], size=20, replace=False)
     mean_profile = values.mean(axis=0)
@@ -103,13 +104,28 @@ def make_profile_plot(
     p84 = np.percentile(values, 84, axis=0)
 
     fig, ax = plt.subplots(figsize=(8.5, 5.2))
+    plot_values = values
+    plot_mean = mean_profile
+    plot_p16 = p16
+    plot_p84 = p84
+    if yscale == "log":
+        positive = values[values > 0.0]
+        if positive.size == 0:
+            raise ValueError("Cannot use log scale for non-positive profile values.")
+        floor = max(float(positive.min()) * 0.5, np.finfo(values.dtype).tiny)
+        plot_values = np.clip(values, floor, None)
+        plot_mean = np.clip(mean_profile, floor, None)
+        plot_p16 = np.clip(p16, floor, None)
+        plot_p84 = np.clip(p84, floor, None)
+
     for idx in sample_idx:
-        ax.plot(x, values[idx], color="#A0CBE8", alpha=0.35, linewidth=0.7)
-    ax.plot(x, mean_profile, color="#1F77B4", linewidth=2.2, label="Mean")
-    ax.fill_between(x, p16, p84, color="#1F77B4", alpha=0.18, label="16th-84th percentile")
+        ax.plot(x, plot_values[idx], color="#A0CBE8", alpha=0.35, linewidth=0.7)
+    ax.plot(x, plot_mean, color="#1F77B4", linewidth=2.2, label="Mean")
+    ax.fill_between(x, plot_p16, plot_p84, color="#1F77B4", alpha=0.18, label="16th-84th percentile")
     ax.set_xlabel(r"Distance from halo boundary [cMpc/$h$]")
     ax.set_ylabel(ylabel)
     ax.set_title(title)
+    ax.set_yscale(yscale)
     ax.legend()
     fig.tight_layout()
     fig.savefig(output_path, dpi=200, bbox_inches="tight")
@@ -194,6 +210,15 @@ def main() -> None:
             title="Sightline density profiles at z=7.4985",
             output_path=args.output_dir / "density_profiles.png",
             rng=rng,
+        ),
+        "density_log_stats": make_profile_plot(
+            radius,
+            density,
+            ylabel="Density",
+            title="Sightline density profiles at z=7.4985 (log scale)",
+            output_path=args.output_dir / "density_profiles_log.png",
+            rng=rng,
+            yscale="log",
         ),
         "velocity_stats": make_profile_plot(
             radius,
