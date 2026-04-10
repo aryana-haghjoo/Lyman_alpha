@@ -1,0 +1,6 @@
+snapshot=data/for_aryana/late_end_early_start/RTcubes/gas_z=07.4985
+redshift=7.4985
+threshold=0.5
+iterations=200000
+n_bins=200
+peak_radius_mpc_h=14.0000
