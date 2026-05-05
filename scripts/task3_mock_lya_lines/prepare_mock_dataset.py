@@ -4,15 +4,13 @@ Task 3: Generate mock z~7.5 Lya lines.
 
     mock_obs(λ) = F_intrinsic(λ) × T_IGM(λ)
 
-For each simulation sightline we randomly draw one DEIMOS intrinsic Lya
-template, resample it onto the simulation wavelength grid (1166–1350 Å rest
-frame), normalise the continuum to 1, then multiply by the simulation
-transmission curve T(λ).
+Intrinsic templates come from JADES DR4 NIRSpec/prism LAEs at z=4–5.5
+(IGM transparent at those redshifts, same instrument as the z~7.5
+evaluation data → no resolution mismatch).
 
-The result is a realistic mock "observed" Lya line at z~7.5 — what an
-observer would actually see through a spectrograph, as opposed to the raw
-transmission curve.  The bubble_size labels and wavelength grid are
-inherited unchanged from the Task 1 dataset.
+For each simulation sightline we randomly draw one template, resample it
+onto the simulation wavelength grid (1166–1350 Å rest frame), normalise
+the continuum to 1, then multiply by the simulation transmission curve.
 
 Multi-redshift ready: processes every dataset_z*.npz it finds.
 
@@ -34,105 +32,122 @@ from scipy.interpolate import interp1d
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-LYA_REST       = 1216.0   # Å
-CONT_LO        = 1260.0   # Å  — continuum normalisation window
-CONT_HI        = 1310.0   # Å
-MIN_CONT_BINS  = 10       # require at least this many valid bins in cont window
+LYA_REST      = 1216.0   # Å
+CONT_LO       = 1260.0   # Å — continuum normalisation window
+CONT_HI       = 1310.0   # Å
+MIN_CONT_BINS = 10
+UM_TO_AA      = 1e4      # 1 μm = 10 000 Å
 
 
-# ── DEIMOS template loading ────────────────────────────────────────────────
+# ── JADES template loading ─────────────────────────────────────────────────
 
-def build_id_to_path(spec_dir: Path) -> dict[int, Path]:
-    """Map object ID → FITS path from spec1d.MASK.SLITNO.ID.fits naming."""
-    paths = glob.glob(str(spec_dir / "**" / "*.fits"), recursive=True)
+def build_jades_index(jades_dir: Path) -> dict[int, Path]:
+    """Map NIRSpec_ID → prism x1d FITS path."""
+    paths = glob.glob(
+        str(jades_dir / "**" / "*prism*x1d*.fits"), recursive=True
+    )
     out = {}
     for p in paths:
+        stem  = Path(p).stem   # e.g. hlsp_jades_jwst_nirspec_goods-s-deepjwst-00002787_clear-prism_v1.0_x1d
+        parts = stem.split("_")
         try:
-            obj_id = int(Path(p).stem.split(".")[-1])
+            obj_id = int(parts[4].split("-")[-1])
             out[obj_id] = Path(p)
-        except ValueError:
+        except (IndexError, ValueError):
             pass
     return out
 
 
-def load_1d_spectrum(path: Path) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
+def load_jades_spectrum(
+    path: Path,
+) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
     """
-    Load (wavelength_Å, flux) from a DEIMOS spec1d FITS file.
-    Tries Horne-B (blue arm) first, then Horne-R (red arm).
-    Returns (None, None) on failure.
+    Load (wavelength_Å_obs, flux) from a JADES prism x1d FITS file.
+    Uses the 5-pixel extraction (best S/N for point sources).
+    Wavelengths in the file are in microns → converted to Å.
     """
-    with fits.open(path) as hdul:
-        for ext_name in ("Horne-B", "Horne-R", "Bxspf-B", "Bxspf-R"):
-            if ext_name not in [h.name for h in hdul]:
-                continue
-            data = hdul[ext_name].data
-            wav  = data["LAMBDA"][0].astype(np.float64)
-            flux = data["SPEC"][0].astype(np.float64)
-            ivar = data["IVAR"][0].astype(np.float64)
-            flux[ivar == 0] = np.nan
-            if np.isfinite(flux).sum() > 50:
-                return wav, flux
-    return None, None
+    try:
+        with fits.open(path) as hdul:
+            data = hdul["EXTRACT5PIX1D"].data
+            wav  = np.array(data["WAVELENGTH"], dtype=np.float64) * UM_TO_AA
+            flux = np.array(data["FLUX"],       dtype=np.float64)
+            err  = np.array(data["FLUX_ERR"],   dtype=np.float64)
+        # mask bad pixels (zero or negative error)
+        bad = (err <= 0) | ~np.isfinite(flux) | ~np.isfinite(err)
+        flux[bad] = np.nan
+        return wav, flux
+    except Exception:
+        return None, None
 
 
-def make_templates(
+def make_jades_templates(
     cat: Table,
     id_to_path: dict[int, Path],
     wav_grid: np.ndarray,
-    z_max_template: float = 5.0,
-    q_min: int = 3,
+    z_min: float = 4.0,
+    z_max: float = 5.5,
+    good_flags: tuple[str, ...] = ("A", "B"),
+    max_lya_peak: float = 50.0,
 ) -> np.ndarray:
     """
-    Build normalised intrinsic templates on wav_grid for all secure LAEs.
+    Build continuum-normalised Lya templates on wav_grid from JADES
+    LAEs at z_min ≤ z ≤ z_max with secure redshifts.
 
-    Normalisation: divide by median flux in the continuum window
-    (CONT_LO – CONT_HI Å rest frame) so the continuum = 1.
+    z=4–5.5 ensures Lya (1216 Å) falls within the NIRSpec prism range
+    (≥0.6 μm) while the IGM is still largely transparent.
 
     Returns float32 array of shape (N_templates, N_wav).
-    Bad / low-S/N spectra are skipped.
     """
-    good = cat[(cat["Q_flag"] >= q_min)
-               & (cat["z_helio"] > 2.0)
-               & (cat["z_helio"] <= z_max_template)]
+    z_spec = np.array(cat["z_Spec"],      dtype=float)
+    flag   = np.array(cat["z_Spec_flag"], dtype=str)
+    nid    = np.array(cat["NIRSpec_ID"],  dtype=int)
+
+    sel = (
+        (z_spec >= z_min) & (z_spec <= z_max)
+        & np.isin(flag, list(good_flags))
+    )
+    selected = cat[sel]
+    print(f"  Candidate templates (z={z_min}–{z_max}, flag {good_flags}): {sel.sum()}")
 
     templates = []
     skipped   = 0
 
-    for row in good:
-        obj_id = int(row["ID"])
+    for row in selected:
+        obj_id = int(row["NIRSpec_ID"])
+        z      = float(row["z_Spec"])
+
         if obj_id not in id_to_path:
             skipped += 1
             continue
 
-        wav_obs, flux = load_1d_spectrum(id_to_path[obj_id])
+        wav_obs, flux = load_jades_spectrum(id_to_path[obj_id])
         if wav_obs is None:
             skipped += 1
             continue
 
-        z = float(row["z_helio"])
+        # Convert to rest frame
         wav_rest = wav_obs / (1.0 + z)
 
-        # Need coverage over our simulation grid
-        if wav_rest[np.isfinite(flux)].min() > wav_grid.min() + 5:
+        # Need coverage over simulation grid
+        finite = np.isfinite(flux)
+        if finite.sum() < 50:
             skipped += 1
             continue
-        if wav_rest[np.isfinite(flux)].max() < wav_grid.max() - 5:
+        if wav_rest[finite].min() > wav_grid.min() + 5:
+            skipped += 1
+            continue
+        if wav_rest[finite].max() < wav_grid.max() - 5:
             skipped += 1
             continue
 
-        # Interpolate onto simulation wavelength grid
-        valid = np.isfinite(flux)
-        if valid.sum() < 100:
-            skipped += 1
-            continue
-
-        interp = interp1d(
-            wav_rest[valid], flux[valid],
+        # Interpolate onto simulation grid
+        interp_fn  = interp1d(
+            wav_rest[finite], flux[finite],
             kind="linear", bounds_error=False, fill_value=np.nan,
         )
-        flux_grid = interp(wav_grid).astype(np.float32)
+        flux_grid = interp_fn(wav_grid).astype(np.float32)
 
-        # Normalise by continuum (red side, IGM transparent at these z)
+        # Normalise by red-side continuum
         cont_mask = (wav_grid >= CONT_LO) & (wav_grid <= CONT_HI)
         cont_vals = flux_grid[cont_mask]
         cont_vals = cont_vals[np.isfinite(cont_vals)]
@@ -145,19 +160,17 @@ def make_templates(
             continue
 
         flux_norm = flux_grid / cont_level
-
-        # Replace remaining NaNs with 0 (outside coverage → no flux)
         flux_norm = np.where(np.isfinite(flux_norm), flux_norm, 0.0)
 
-        # Sanity: at least some positive flux near Lya
+        # Sanity: positive Lya flux
         lya_mask = (wav_grid > 1210) & (wav_grid < 1240)
-        lya_peak = flux_norm[lya_mask].max()
+        lya_peak = float(flux_norm[lya_mask].max())
         if lya_peak < 0.1:
             skipped += 1
             continue
 
-        # Reject extreme emitters (Lya peak > 50x continuum — unusable shape)
-        if lya_peak > 50:
+        # Reject extreme outliers
+        if lya_peak > max_lya_peak:
             skipped += 1
             continue
 
@@ -170,20 +183,17 @@ def make_templates(
 # ── mock spectrum generation ───────────────────────────────────────────────
 
 def make_mock_spectra(
-    transmission: np.ndarray,   # (N_sightlines, N_wav)
-    templates: np.ndarray,      # (N_templates, N_wav)
+    transmission: np.ndarray,
+    templates: np.ndarray,
     rng: np.random.Generator,
 ) -> np.ndarray:
     """
-    For each sightline, draw one random template and multiply by transmission.
-
+    For each sightline draw one random JADES template and multiply by T(λ).
         mock_obs(λ) = F_intrinsic(λ) × T_IGM(λ)
-
-    Returns float32 array of shape (N_sightlines, N_wav).
+    Returns float32 (N_sightlines, N_wav).
     """
-    N = len(transmission)
-    idx = rng.integers(0, len(templates), size=N)
-    mock = templates[idx] * transmission        # broadcast: (N, N_wav)
+    idx  = rng.integers(0, len(templates), size=len(transmission))
+    mock = templates[idx] * transmission
     return mock.astype(np.float32)
 
 
@@ -193,12 +203,12 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--task1-dir", type=Path,
                    default=PROJECT_ROOT / "results/task1_transmission_to_bubble_size")
-    p.add_argument("--deimos-dir", type=Path,
-                   default=PROJECT_ROOT / "data/deimos_deeper_than_deep")
+    p.add_argument("--jades-dir", type=Path,
+                   default=Path("/home/aryana/Documents/GitHub/multimodal_superresolution/data/JADES/DR4"))
     p.add_argument("--output-dir", type=Path,
                    default=PROJECT_ROOT / "results/task3_mock_lya_lines")
-    p.add_argument("--z-max-template", type=float, default=5.0,
-                   help="Max redshift for DEIMOS templates (IGM transparent below ~5)")
+    p.add_argument("--z-min-template", type=float, default=4.0)
+    p.add_argument("--z-max-template", type=float, default=5.5)
     p.add_argument("--seed", type=int, default=42)
     return p.parse_args()
 
@@ -209,20 +219,23 @@ def main() -> None:
 
     rng = np.random.default_rng(args.seed)
 
-    # ── build DEIMOS templates ─────────────────────────────────────────────
-    print("Loading DEIMOS catalog …")
-    cat = Table.read(args.deimos_dir / "DEIMOS_EGS_UrbanoStawinski.fits")
-    id_to_path = build_id_to_path(args.deimos_dir / "1dspec")
-    print(f"  Catalog: {len(cat)} objects  |  FITS indexed: {len(id_to_path)}")
+    # ── build JADES template index ────────────────────────────────────────
+    print("Indexing JADES prism spectra …")
+    id_to_path = build_jades_index(args.jades_dir)
+    print(f"  Indexed {len(id_to_path)} prism x1d files")
 
-    # ── process each redshift dataset ─────────────────────────────────────
+    print("Loading JADES catalog …")
+    cat = Table.read(args.jades_dir / "Combined_DR4_external_v1.2.1.fits")
+    print(f"  {len(cat)} objects in catalog")
+
+    # ── process each simulation redshift ──────────────────────────────────
     datasets = sorted(args.task1_dir.glob("dataset_z*.npz"))
     if not datasets:
         raise FileNotFoundError(f"No dataset_z*.npz in {args.task1_dir}")
     print(f"\nFound {len(datasets)} Task 1 dataset(s).")
 
     for ds_path in datasets:
-        tag = ds_path.stem.replace("dataset_", "")   # e.g. z7.4985
+        tag      = ds_path.stem.replace("dataset_", "")
         out_path = args.output_dir / f"mock_{tag}.npz"
 
         if out_path.exists():
@@ -231,26 +244,25 @@ def main() -> None:
 
         print(f"\n── {tag} ──────────────────────────────────────────")
         d = np.load(ds_path)
-        wav          = d["wav"]            # (N_wav,) ascending Å
-        transmission = d["transmission"]   # (N, N_wav)
-        bubble_size  = d["bubble_size"]    # (N,)
-        halo_mass    = d["halo_mass"]      # (N,)
-        redshift     = d["redshift"]       # scalar
-
+        wav          = d["wav"]
+        transmission = d["transmission"]
+        bubble_size  = d["bubble_size"]
+        halo_mass    = d["halo_mass"]
+        redshift     = d["redshift"]
         print(f"  Sightlines: {len(transmission)}  wav: {wav.min():.1f}–{wav.max():.1f} Å")
 
-        print("  Building intrinsic templates …")
-        templates = make_templates(cat, id_to_path, wav,
-                                   z_max_template=args.z_max_template)
+        print(f"  Building JADES templates (z={args.z_min_template}–{args.z_max_template}) …")
+        templates = make_jades_templates(
+            cat, id_to_path, wav,
+            z_min=args.z_min_template,
+            z_max=args.z_max_template,
+        )
         if len(templates) == 0:
-            print("  ERROR: no valid templates — skipping this redshift.")
+            print("  ERROR: no valid templates — skipping.")
             continue
-        print(f"  Template shape: {templates.shape}  "
-              f"continuum-normalised, on simulation grid")
 
-        print("  Generating mock spectra (intrinsic × transmission) …")
+        print(f"  Generating mock spectra …")
         mock = make_mock_spectra(transmission, templates, rng)
-        print(f"  Mock spectra shape: {mock.shape}")
 
         np.savez(
             out_path,
@@ -264,8 +276,7 @@ def main() -> None:
         )
         print(f"  Saved → {out_path}")
         print(f"  Mock flux: median={np.median(mock):.4f}  "
-              f"max={mock.max():.4f}  "
-              f"zeros={(mock == 0).mean()*100:.1f}%")
+              f"max={mock.max():.4f}  zeros={(mock==0).mean()*100:.1f}%")
 
     print("\nDone.")
 
