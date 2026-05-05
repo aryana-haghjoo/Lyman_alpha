@@ -1,0 +1,37 @@
+Here are all your tasks, organized cleanly:
+
+Task 1 — Train model on transmission curves + RT cube (in progress)
+    Input: Lya transmission spectra from simulation
+    Target: bubble size derived directly from the RT cube fion field
+    Status: training ran, R² ≈ -0.04 — still needs investigation (likely need to clarify with Anson exactly what "RT cube input" means — local fion patch? ray-traced depth?)
+
+Task 2 — Find intrinsic Lya line templates
+    Find observed LAE spectra at z ≤ 5 (after reionization, so IGM is transparent → intrinsic line shape is visible)
+    Option A: observational surveys — you mentioned DESI/DEIMOS, worth checking MUSE/VLT too
+    Option B: theoretical models from the literature
+
+Task 3 — Generate mock z~7.5 Lya lines
+    Take intrinsic templates from Task 2
+    Convolve with the simulation transmission curves
+    Result: realistic mock "observed" Lya lines at z~7.5
+
+Task 4 — Train second model on mock Lya lines
+    Same setup as Task 1 but input = mock Lya lines (not raw transmission curves)
+    More realistic because this is what an observer would actually see
+    Same RT cube bubble size targets
+
+Task 5 — Find real observational data for evaluation
+    Find real high-z LAE spectra from a survey (you mentioned DESI — probably DESI or DEIMOS)
+    Need spectra after reionization for templates and at z~7.5 for evaluation
+    Goal: run the trained model on real data, not just simulation
+
+Task 6 — Infer bubble size distribution from line asymmetry
+    Compare intrinsic Lya line shape vs attenuated (observed) line
+    The asymmetry encodes the bubble size
+    Use this to infer the bubble size distribution and compare to the RT cube
+Waiting on Anson
+More simulation snapshots at different redshifts (different global ionized fractions)
+Different reionization models
+This will give you a much richer training set for Tasks 1 and 4
+The logical order is: 2 → 3 → 1/4 in parallel → 5 → 6. Task 2 is the unblocked thing to start now while waiting for Anson's new simulation data.
+
