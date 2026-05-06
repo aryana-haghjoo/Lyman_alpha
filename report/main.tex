@@ -21,20 +21,34 @@ from Lyman-$\alpha$ Spectra}}
 \maketitle
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Overview}
+\section{Summary}
 
-The goal of this project is to train a 1-D convolutional neural network
-(CNN) that can infer the ionized bubble size distribution during reionization
-from Lyman-$\alpha$ (Ly$\alpha$) spectra of high-redshift LAEs.
-The trained model will eventually be applied to real survey data to
-recover the bubble size distribution without any knowledge of the intrinsic
-line shape.
+I built an end-to-end pipeline to recover the ionized bubble size
+distribution during reionization from Ly$\alpha$ spectra using a 1-D CNN
+trained on simulation data.
+An initial result of $R^2 = 0.98$ was an artifact: the target bubble size
+was derived directly from the input spectrum, making prediction trivial;
+once replaced by the physically motivated RT-cube mean-free-path (MFP), the
+model achieves $R^2 \approx 0$ at a single redshift.
+This is somewhat expected — the per-sightline Pearson correlation between
+the transmission and the RT-cube MFP is only $r \approx 0.05$, and the
+model requires simulation snapshots at multiple redshifts to learn a real
+signal.
 
-This report covers: (i) the simulation data and target labels, (ii) an
-explanation of why the initial ``surprisingly good'' results were an
-artifact, (iii) the physically motivated approach and its current
-performance, (iv) the observational data pipeline using JADES, and
-(v) what is needed to make the model work.
+On the observational side, I initially used the \textit{Deeper than DEEP}
+DEIMOS survey as a source of intrinsic Ly$\alpha$ templates.
+However, this survey is limited to $z \lesssim 6.4$ and cannot provide
+spectra at the evaluation redshift of $z \sim 7.5$, so it could only serve
+as a template library at lower redshifts.
+To avoid any instrument resolution mismatch between templates and evaluation
+data, I switched the entire observational pipeline to
+\textbf{JWST/NIRSpec prism} (JADES DR4), which covers both redshift ranges
+with the same instrument: 325 secure LAEs at $z = 4$--$5.5$ are used as
+intrinsic templates, and 108 galaxies at $z = 7$--$8$ serve as evaluation
+data.
+The full pipeline is now in place and ready to incorporate new simulation
+snapshots at additional redshifts; I expect that training on a broader
+range of ionization states will substantially improve the model performance.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Simulation Data and Target Labels}
@@ -220,7 +234,24 @@ $z=4$--$5.5$) and \textbf{108 evaluation galaxies} ($z=7$--$8$).
 
 \subsection{Mock Ly$\alpha$ line construction}
 
-For each simulation sightline, we randomly draw one JADES template,
+At $z \sim 7.5$ the IGM is $\sim 50\%$ neutral, so any observed spectrum is
+a product of the galaxy's intrinsic emission and the IGM transmission.
+We cannot measure the intrinsic line shape directly at $z \sim 7.5$ because
+the very IGM attenuation we want to study obscures it.
+Galaxies at $z = 4$--$5.5$ solve this: the IGM is almost fully ionised at
+those redshifts, so what we observe is effectively the intrinsic profile.
+By using those lower-redshift spectra as templates, we can construct
+realistic mock observations at $z \sim 7.5$:
+\begin{equation}
+  F_{\rm mock}(\lambda) = F_{\rm intrinsic}^{z=4\text{--}5.5}(\lambda)
+  \times T_{\rm IGM}^{z=7.5}(\lambda).
+\end{equation}
+Training on $F_{\rm mock}$ rather than the raw $T_{\rm IGM}$ is essential
+for deployment on real data: a spectrograph records $F_{\rm mock}$, not
+$T_{\rm IGM}$, so the model must be trained on inputs that match the
+observational format.
+
+For each simulation sightline we randomly draw one JADES template,
 resample it onto the simulation wavelength grid, normalise the red-side
 continuum to unity, and multiply by the simulation transmission.
 Figure~\ref{fig:mock} shows three examples spanning the range of bubble
